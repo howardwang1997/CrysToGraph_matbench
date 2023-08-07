@@ -1,19 +1,11 @@
 import time
 import os
-from multiprocessing.dummy import Pool as ThreadPool
-import random
-import copy
+from math import sqrt
+from sklearn.metrics import roc_auc_score, f1_score
 
-import numpy as np
 import torch
-from torch import nn
-from torch.nn import functional as F
-
-import torch.optim as optim
-from sklearn import metrics
 from torch.autograd import Variable
-from torch.optim.lr_scheduler import MultiStepLR
-from torch.nn import CrossEntropyLoss, MSELoss, L1Loss, BCEWithLogitsLoss, SmoothL1Loss
+from torch.nn import MSELoss, L1Loss, BCEWithLogitsLoss
 
 
 class AverageRecorder(object):
@@ -53,16 +45,13 @@ class Trainer():
     def _calc_loss(self, outputs):
         return self.criterion(outputs[0], outputs[1])
 
-    def train(self, mixed_train_loader, criterion, optimizer, epochs, scheduler=None, verbose_freq: int=100, grad_accum: int=1, classification: bool=False):
+    def train(self, train_loader, criterion, optimizer, epochs,
+              scheduler=None, verbose_freq: int=100, grad_accum: int=1, classification: bool=False):
         self.model.train()
         self.criterion = criterion
         lrs = True
         if scheduler is None:
             lrs = False
-        if self.random_seed is None:
-            self.random_seed = [random.random() for i in range(epochs)]
-        mpcd = mixed_train_loader.dataset
-        batch_size = mixed_train_loader.batch_size
         self.classification = classification
 
         if self.classification:
@@ -76,18 +65,17 @@ class Trainer():
             loss_list = []
             self.losses.reset()
 
-            for i, data in enumerate(mixed_train_loader):
+            for i, data in enumerate(train_loader):
                 self.data_time.update(time.time() - end)
                 end = time.time()
 
-                opor = self.model((data[0].to(torch.device('cuda:0')), data[1].to(torch.device('cuda:0'))))
+                output = self.model((data[0].to(torch.device('cuda:0')), data[1].to(torch.device('cuda:0'))))
                 target = data[-1]
 
-#                target = self._make_target(data[0].y)
                 target = Variable(target.float())
                 if self.cuda:
                     target = target.cuda()
-                loss = self.criterion_task(opor[1], target)
+                loss = self.criterion_task(output, target)
 
                 loss_list.append(loss.data.cpu().item())
                 self.losses.update(loss.data.cpu().item(), criterion.batch_size)
@@ -103,11 +91,42 @@ class Trainer():
                 end = time.time()
 
                 if i % verbose_freq == 0:
-                    self.verbose(epoch, i, len(mixed_train_loader))
+                    self.verbose(epoch, i, len(train_loader))
             if lrs:
                 scheduler.step()
             self.loss_list.append(loss_list)
             self.save_model()
+
+    def validate(self, test_loader):
+        self.model.eval()
+
+        outputs = torch.Tensor()
+        targets = torch.Tensor()
+
+        end = time.time()
+        for i, data in enumerate(test_loader):
+            self.data_time.update(time.time() - end)
+            end = time.time()
+
+            output = self.model((data[0].to(torch.device('cuda:0')), data[1].to(torch.device('cuda:0')))).cpu()
+            target = data[-1]
+
+            self.batch_time.update(time.time() - end)
+            end = time.time()
+
+            outputs = torch.cat((outputs, output), dim=0)
+            targets = torch.cat((targets, target), dim=0)
+
+        if self.classification:
+            auc = roc_auc_score(targets, outputs)
+            f1 = f1_score(targets, outputs)
+            print('VALIDATION: ROC_AUC_SCORE= %.4f, F1_SCORE= %.4f' % (float(auc), float(f1)))
+        else:
+            mae = L1Loss()(outputs, targets)
+            rmse = sqrt(MSELoss()(outputs, targets))
+            print('VALIDATION: MAE_SCORE= %.4f, RMSE_SCORE= %.4f' % (float(mae), float(rmse)))
+
+        return outputs
 
     def verbose(self, epoch, i, total):
         print('Epoch: [{0}][{1}/{2}]\t'
@@ -127,17 +146,11 @@ class Trainer():
                 names = list(filter(lambda name: len(name) > 5, names))
                 index = max([int(x[5:]) for x in names]) + 1
                 self.save_model_index = index
-            path = 'config/model%d.tsd' % self.save_model_index
+            path = 'config/model%d.pt' % self.save_model_index
         torch.save(self.model.state_dict(), path)
-
-
-    def load_model(self, path=''):
-        if path == '':
-            path = 'config/model.tch'
-        return torch.load(path)
 
     def save_state_dict(self, path=''):
         if path == '':
-            path = 'config/model.tsd'
+            path = 'config/model.pt'
         torch.save(self.model.state_dict(), path)
 
