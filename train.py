@@ -45,10 +45,10 @@ class Trainer():
     def _calc_loss(self, outputs):
         return self.criterion(outputs[0], outputs[1])
 
-    def train(self, train_loader, criterion, optimizer, epochs,
-              scheduler=None, verbose_freq: int=100, grad_accum: int=1, classification: bool=False):
+    def train(self, train_loader, optimizer, epoches,
+              scheduler=None, verbose_freq: int=100,
+              grad_accum: int=1, classification: bool=False):
         self.model.train()
-        self.criterion = criterion
         lrs = True
         if scheduler is None:
             lrs = False
@@ -92,12 +92,14 @@ class Trainer():
 
                 if i % verbose_freq == 0:
                     self.verbose(epoch, i, len(train_loader))
+                elif i == len(train_loader) - 1:
+                    self.verbose(epoch, -1, len(train_loader))
             if lrs:
                 scheduler.step()
             self.loss_list.append(loss_list)
             self.save_model()
 
-    def validate(self, test_loader):
+    def eval(self, test_loader):
         self.model.eval()
 
         outputs = torch.Tensor()
@@ -137,16 +139,23 @@ class Trainer():
             data_time=self.data_time, loss=self.losses)
         )
 
-    def save_model(self, path=''):
-        if path == '':
-            if not hasattr(self, 'save_model_index'):
-                names = list(filter(lambda name: 'model' in name, os.listdir('config/')))
+    def save_model(self):
+        try:
+            os.mkdir('checkpoints')
+        except FileExistsError:
+            pass
+
+        if not hasattr(self, 'save_model_index'):
+            names = list(filter(lambda name: 'model' in name, os.listdir('config/')))
+            if len(names) == 0:
+                self.save_model_index = 0
+            else:
                 names = [x.split('.')[0] for x in names]
                 names = list(filter(lambda name: name[:5] == 'model', names))
                 names = list(filter(lambda name: len(name) > 5, names))
                 index = max([int(x[5:]) for x in names]) + 1
                 self.save_model_index = index
-            path = 'config/model%d.pt' % self.save_model_index
+        path = 'config/model%d.pt' % self.save_model_index
         torch.save(self.model.state_dict(), path)
 
     def save_state_dict(self, path=''):

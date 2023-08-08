@@ -39,7 +39,7 @@ class GaussianFilter(object):
 		
 
 class CrystalDataset(torch.utils.data.Dataset):
-    def __init__(self, atom_vocab, inputs, outputs, root='./crystal_dataset/', embedded=False):
+    def __init__(self, atom_vocab, inputs, outputs, root='crystal_dataset', embedded=False):
         
         if root[-1] is not '/': root = '%s/' % root
         self.root = root
@@ -56,14 +56,14 @@ class CrystalDataset(torch.utils.data.Dataset):
 
         self.gfs =  [GaussianFilter(0, 8, 0.2),
                      GaussianFilter(0, 3.2, 0.2),
-                     GaussianFilter(-1.6, 1.6, 0.2),
+                     GaussianFilter(-3.2, 3.2, 0.4),
                      GaussianFilter(-1.4, 1.5, 0.1)]
         
         super().__init__()
 
     def process(self, name, structure, label):
         g, lg = structure2dglgraph(structure, self.atom_vocab)
-        joblib.dump((g, lg, label), '%s%s.jbl' % (self.root, name))
+        joblib.dump((g, lg, label), '%s/%s.jbl' % (self.root, name))
         return g, lg, label
     
     def __len__(self):
@@ -79,7 +79,7 @@ class CrystalDataset(torch.utils.data.Dataset):
             item = self.dict_graph[name]
         except KeyError:
             try:
-                item = joblib.load('%s%s.jbl' % (self.root, name))
+                item = joblib.load('%s/%s.jbl' % (self.root, name))
             except FileNotFoundError:
                 item = self.process(name, structure, label)
             self.dict_graph[name] = item
