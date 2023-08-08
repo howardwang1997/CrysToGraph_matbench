@@ -11,4 +11,9 @@ for task in mb.tasks:
 
     for fold in task.folds:
         train_inputs, train_outputs = task.get_train_and_val_data(fold)
-        
+        # mkdir
+        # define model, trainer
+        # define dataset and preprocess
+        # train
+        # predict
+        # record
