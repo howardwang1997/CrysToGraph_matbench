@@ -1,6 +1,7 @@
 import os
 import joblib
 import argparse
+import shutil
 
 import torch
 from torch import nn, optim
@@ -49,6 +50,12 @@ for task in mb.tasks:
     else:
         embeddings_path = ''
 
+    # mkdir
+    try:
+        os.mkdir(name)
+    except FileExistsError:
+        pass
+
     for fold in task.folds:
         train_inputs, train_outputs = task.get_train_and_val_data(fold)
 
@@ -61,12 +68,6 @@ for task in mb.tasks:
             grad_accum = 2
         else:
             grad_accum = 8
-
-        # mkdir
-        try:
-            os.mkdir(name)
-        except FileExistsError:
-            pass
 
         # define atom_vocab, dataset, model, trainer
         embeddings = torch.load(embeddings_path).cuda()
@@ -105,5 +106,6 @@ for task in mb.tasks:
         task.record(fold, predictions)
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
+    shutil.rmtree(name)
 
 mb.to_file("CrysToGraph_benchmark.json.gz")
