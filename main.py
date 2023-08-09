@@ -46,6 +46,8 @@ for task in mb.tasks:
         embeddings_path = 'embeddings_84_64catcgcnn.pt'
     elif atom_fea_len == 92:
         embeddings_path = 'embeddings_84_cgcnn.pt'
+    else:
+        embeddings_path = ''
 
     for fold in task.folds:
         train_inputs, train_outputs = task.get_train_and_val_data(fold)
