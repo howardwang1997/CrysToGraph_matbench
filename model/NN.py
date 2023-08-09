@@ -117,9 +117,8 @@ class CrysToGraphNet(nn.Module):
         for idx in range(len(self.convs)):
             atom_fea, nbr_fea = self.mp(self.convs[idx], self.line_convs[idx], 
                      atom_fea, nbr_fea_idx, nbr_fea, line_fea_idx, line_fea, idx)
-        # NEED MODIFY
         if hasattr(self, 'bn'):
-            atom_fea = self.ln(atom_fea)
+            atom_fea = self.bn(atom_fea)
             nbr_fea = self.bne(nbr_fea)
 
         atom_fea = atom_fea + pe
@@ -130,6 +129,7 @@ class CrysToGraphNet(nn.Module):
         crys_fea = tgnn.pool.global_mean_pool(atom_fea, crystal_atom_idx)
         crys_fea = self.conv_to_fc_softplus(crys_fea)
         crys_fea = self.conv_to_fc(crys_fea)
+        if hasattr(self, 'ln'): crys_fea = self.ln(crys_fea)
 
         for fc, sp in zip(self.fcs, self.softpluses):
             crys_fea = sp(crys_fea)
@@ -145,7 +145,6 @@ class CrysToGraphNet(nn.Module):
 
     def mp(self, conv_n, conv_l, atom_fea, nbr_fea_idx, nbr_fea, line_fea_idx, line_fea, idx):
         nbr_fea, line_fea = conv_l(nbr_fea, line_fea_idx, line_fea)
-        # NEED RECONSIDER
         atom_fea, line_fea = conv_n(atom_fea, nbr_fea_idx, self.lnns[idx](nbr_fea))
         return atom_fea, nbr_fea
 
