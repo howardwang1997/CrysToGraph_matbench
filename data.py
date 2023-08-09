@@ -71,7 +71,7 @@ class CrystalDataset(torch.utils.data.Dataset):
     
     # @functools.lru_cache(maxsize=None)
     def __getitem__(self, idx):
-        structure= self.inputs[idx]
+        structure = self.inputs[idx]
         label = self.outputs[idx]
         name = self.outputs.index[idx]
 
