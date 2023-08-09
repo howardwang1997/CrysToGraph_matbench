@@ -48,6 +48,7 @@ for task in mb.tasks:
 
         if len(train_inputs) < 20000:
             epochs = 600
+            grad_accum = 2
         elif len(train_inputs) < 10000:
             epochs = 1000
         elif len(train_inputs) < 2000:
