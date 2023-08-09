@@ -45,7 +45,7 @@ class Trainer():
     def _calc_loss(self, outputs):
         return self.criterion(outputs[0], outputs[1])
 
-    def train(self, train_loader, optimizer, epoches,
+    def train(self, train_loader, optimizer, epochs,
               scheduler=None, verbose_freq: int=100,
               grad_accum: int=1, classification: bool=False):
         self.model.train()
@@ -78,7 +78,7 @@ class Trainer():
                 loss = self.criterion_task(output, target)
 
                 loss_list.append(loss.data.cpu().item())
-                self.losses.update(loss.data.cpu().item(), criterion.batch_size)
+                self.losses.update(loss.data.cpu().item(), len(target))
 
                 loss /= grad_accum
                 loss.backward()
@@ -99,7 +99,7 @@ class Trainer():
             self.loss_list.append(loss_list)
             self.save_model()
 
-    def eval(self, test_loader):
+    def predict(self, test_loader):
         self.model.eval()
 
         outputs = torch.Tensor()

@@ -1,5 +1,6 @@
 import os
 import joblib
+import argparse
 
 import torch
 from torch import nn, optim
@@ -16,19 +17,31 @@ from model.scheduler import WarmupMultiStepLR
 mb = MatbenchBenchmark(autoload=False)
 mb = mb.from_preset('matbench_v0.1', 'structure')
 
-atom_fea_len = 156
-nbr_fea_len = 76
-batch_size = 32
-epochs = 300
-weight_decay = 0
-lr = 0.0001
-grad_accum = 1
+parser = argparse.ArgumentParser(description='Run CrysToGraph on matbench.')
+parser.add_argument('--atom_fea_len', type=int, default=156)
+parser.add_argument('--nbr_fea_len', type=int, default=76)
+parser.add_argument('--batch_size', type=int, default=32)
+parser.add_argument('--epochs', type=int, default=300)
+parser.add_argument('--weight_decay', type=float, default=0.0)
+parser.add_argument('--lr', type=float, default=0.0001)
+parser.add_argument('--grad_accum', type=int, default=1)
+args = parser.parse_args()
 
 for task in mb.tasks:
     task.load()
     classification = task.metadata['task_type']
     name = task.dataset_name
     input = task.metadata['input_type']
+
+    # hyperparameters
+    atom_fea_len = args.atom_fea_len
+    nbr_fea_len = args.nbr_fea_len
+    batch_size = args.batch_size
+    epochs = args.epochs
+    weight_decay = args.weight_decay
+    lr = args.lr
+    grad_accum = args.grad_accum
+
 
     for fold in task.folds:
         train_inputs, train_outputs = task.get_train_and_val_data(fold)
@@ -37,7 +50,7 @@ for task in mb.tasks:
             epochs = 600
         elif len(train_inputs) < 10000:
             epochs = 1000
-        elif len(train_inputs) < 1000:
+        elif len(train_inputs) < 2000:
             epochs = 2000
         else:
             grad_accum = 8
@@ -60,7 +73,7 @@ for task in mb.tasks:
         drop = 0.0 if not classification else 0.2
         ctgn = CrysToGraphNet(atom_fea_len, nbr_fea_len, embeddings=embeddings, h_fea_len=256, n_conv=3, n_fc=2, module=module, norm=True, drop=drop)
         optimizer = optim.AdamW(ctgn.parameters(), lr=lr, betas=(0.9, 0.99), weight_decay=weight_decay)
-        scheduler = WarmupMultiStepLR(optimizer, [100], gamma=0.1)
+        scheduler = WarmupMultiStepLR(optimizer, [int(epochs/3)], gamma=0.1)
         trainer = Trainer(ctgn)
 
         # train
@@ -79,7 +92,7 @@ for task in mb.tasks:
                             inputs=test_inputs,
                             outputs=test_outputs)
         test_loader = DataLoader(cd, batch_size=2, shuffle=False, collate_fn=cd.collate_line_graph)
-        predictions = trainer.eval(test_loader=test_loader)
+        predictions = trainer.predict(test_loader=test_loader)
 
         # record
         task.record(fold, predictions)
