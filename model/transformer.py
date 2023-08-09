@@ -91,8 +91,8 @@ class GlobalTransformerLayer(MessagePassing):
         self.W_K.reset_parameters()
         self.L_O.reset_parameters()
         
-        self.BNN1.reset_parameters()
-        self.BNN2.reset_parameters()
+        self.LNN1.reset_parameters()
+        self.LNN2.reset_parameters()
         
         self.FCN1.reset_parameters()
         self.FCN2.reset_parameters()
@@ -113,7 +113,7 @@ class GlobalTransformerLayer(MessagePassing):
         
         assert x.dim() == 2
 
-#         edge_embediings as positional encoding
+#         edge embeddings as positional encoding
         e = self.embed_edge(edge_attr) if self.incorp_edge else None
 
 #         with no self loop

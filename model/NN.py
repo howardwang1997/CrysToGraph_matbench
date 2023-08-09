@@ -93,6 +93,7 @@ class CrysToGraphNet(nn.Module):
         if norm:
             self.ln = nn.LayerNorm(h_fea_len)
             self.bn = nn.BatchNorm1d(h_fea_len)
+            self.bne = nn.BatchNorm1d(nbr_fea_len)
         self.drop = nn.Dropout(drop)
         
     def forward(self, data, contrastive=True):
@@ -117,7 +118,9 @@ class CrysToGraphNet(nn.Module):
             atom_fea, nbr_fea = self.mp(self.convs[idx], self.line_convs[idx], 
                      atom_fea, nbr_fea_idx, nbr_fea, line_fea_idx, line_fea, idx)
         # NEED MODIFY
-        if hasattr(self, 'bn'): atom_fea = self.ln(atom_fea)
+        if hasattr(self, 'bn'):
+            atom_fea = self.ln(atom_fea)
+            nbr_fea = self.bne(nbr_fea)
 
         atom_fea = atom_fea + pe
         atom_fea = self.conv_sp(self.gt(self.global_transformer, atom_fea, crystal_atom_idx, nbr_fea_idx, nbr_fea))
