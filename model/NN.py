@@ -79,7 +79,7 @@ class CrysToGraphNet(nn.Module):
             
         self.conv_to_fc = nn.Linear(h_fea_len, h_fea_len)
         self.conv_to_fc_softplus = nn.Softplus()
-        self.lnn = nn.LayerNorm(nbr_fea_len)
+        self.lnns = nn.Sequential(*[nn.LayerNorm(nbr_fea_len) for _ in range(n_conv)])
         
         self.fcs = nn.ModuleList([nn.Linear(in_features=h_fea_len,
                                             out_features=h_fea_len,
@@ -115,7 +115,7 @@ class CrysToGraphNet(nn.Module):
 
         for idx in range(len(self.convs)):
             atom_fea, nbr_fea = self.mp(self.convs[idx], self.line_convs[idx], 
-                     atom_fea, nbr_fea_idx, nbr_fea, line_fea_idx, line_fea)
+                     atom_fea, nbr_fea_idx, nbr_fea, line_fea_idx, line_fea, idx)
         if hasattr(self, 'bn'): atom_fea = self.ln(atom_fea)
 
         atom_fea = atom_fea + pe
@@ -139,9 +139,9 @@ class CrysToGraphNet(nn.Module):
                 
         return out
 
-    def mp(self, conv_n, conv_l, atom_fea, nbr_fea_idx, nbr_fea, line_fea_idx, line_fea):
+    def mp(self, conv_n, conv_l, atom_fea, nbr_fea_idx, nbr_fea, line_fea_idx, line_fea, idx):
         nbr_fea, line_fea = conv_l(nbr_fea, line_fea_idx, line_fea)
-        atom_fea, line_fea = conv_n(atom_fea, nbr_fea_idx, self.lnn(nbr_fea))
+        atom_fea, line_fea = conv_n(atom_fea, nbr_fea_idx, self.lnns[idx](nbr_fea))
         return atom_fea, nbr_fea
 
     def gt(self, gt_layer, atom_fea, crystal_atom_idx, nbr_fea_idx, nbr_fea):
