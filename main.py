@@ -42,6 +42,10 @@ for task in mb.tasks:
     lr = args.lr
     grad_accum = args.grad_accum
 
+    if atom_fea_len == 156:
+        embeddings_path = 'embeddings_84_64catcgcnn.pt'
+    elif atom_fea_len == 92:
+        embeddings_path = 'embeddings_84_cgcnn.pt'
 
     for fold in task.folds:
         train_inputs, train_outputs = task.get_train_and_val_data(fold)
@@ -63,7 +67,7 @@ for task in mb.tasks:
             pass
 
         # define atom_vocab, dataset, model, trainer
-        embeddings = torch.load('embeddings_84_64catcgcnn.pt').cuda()
+        embeddings = torch.load(embeddings_path).cuda()
         atom_vocab = joblib.load('atom_vocab.jbl')
         cd = CrystalDataset(root=name,
                             atom_vocab=atom_vocab,
@@ -97,5 +101,7 @@ for task in mb.tasks:
 
         # record
         task.record(fold, predictions)
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
 mb.to_file("CrysToGraph_benchmark.json.gz")
