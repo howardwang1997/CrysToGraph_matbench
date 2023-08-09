@@ -116,6 +116,7 @@ class CrysToGraphNet(nn.Module):
         for idx in range(len(self.convs)):
             atom_fea, nbr_fea = self.mp(self.convs[idx], self.line_convs[idx], 
                      atom_fea, nbr_fea_idx, nbr_fea, line_fea_idx, line_fea, idx)
+        # NEED MODIFY
         if hasattr(self, 'bn'): atom_fea = self.ln(atom_fea)
 
         atom_fea = atom_fea + pe
