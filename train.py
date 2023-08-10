@@ -26,13 +26,16 @@ class AverageRecorder(object):
 
 
 class Trainer():
-    def __init__(self, model, cuda=True):
+    def __init__(self, model, name='', cuda=True):
         self.batch_time = AverageRecorder()
         self.data_time = AverageRecorder()
         self.losses = AverageRecorder()
 
         self.cuda = cuda and torch.cuda.is_available()
         self.model = model
+        self.name = name
+        if len(self.name) == 0:
+            self.name = 'model'
         if self.cuda:
             self.model = model.cuda()
 
@@ -46,7 +49,7 @@ class Trainer():
         return self.criterion(outputs[0], outputs[1])
 
     def train(self, train_loader, optimizer, epochs,
-              scheduler=None, verbose_freq: int=100,
+              scheduler=None, verbose_freq: int=100, checkpoint_by_epoch: bool=True,
               grad_accum: int=1, classification: bool=False):
         self.model.train()
         lrs = True
@@ -97,7 +100,8 @@ class Trainer():
             if lrs:
                 scheduler.step()
             self.loss_list.append(loss_list)
-            self.save_model()
+            self.save_checkpoints(epoch, checkpoint_by_epoch)
+        self.save_state_dict()
 
     def predict(self, test_loader):
         self.model.eval()
@@ -139,27 +143,37 @@ class Trainer():
             data_time=self.data_time, loss=self.losses)
         )
 
-    def save_model(self):
+    def save_checkpoints(self, epoch=0, by_epoch=False):
         try:
             os.mkdir('checkpoints')
         except FileExistsError:
             pass
 
-        if not hasattr(self, 'save_model_index'):
-            names = list(filter(lambda name: 'model' in name, os.listdir('config/')))
-            if len(names) == 0:
-                self.save_model_index = 0
-            else:
-                names = [x.split('.')[0] for x in names]
-                names = list(filter(lambda name: name[:5] == 'model', names))
-                names = list(filter(lambda name: len(name) > 5, names))
-                index = max([int(x[5:]) for x in names]) + 1
-                self.save_model_index = index
-        path = 'config/model%d.pt' % self.save_model_index
+        if not by_epoch:
+            if not hasattr(self, 'save_model_index'):
+                names = list(filter(lambda name: self.name in name, os.listdir('checkpoints/')))
+                if len(names) == 0:
+                    self.save_model_index = 0
+                else:
+                    names = [x.split('.')[0] for x in names]
+                    names = list(filter(lambda name: name[:5] == self.name, names))
+                    names = list(filter(lambda name: len(name) > 5, names))
+                    index = max([int(x[5:]) for x in names]) + 1
+                    self.save_model_index = index
+            path = 'checkpoints/%s_%d.pt' % (self.save_model_index, self.name)
+        else:
+            save_model_index = epoch
+            path = 'checkpoints/%s_%d.pt' % (save_model_index, self.name)
+
         torch.save(self.model.state_dict(), path)
 
     def save_state_dict(self, path=''):
+        try:
+            os.mkdir('results')
+        except FileExistsError:
+            pass
+
         if path == '':
-            path = 'config/model.pt'
+            path = 'results/%s.pt' % self.name
         torch.save(self.model.state_dict(), path)
 
