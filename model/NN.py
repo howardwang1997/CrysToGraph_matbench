@@ -91,7 +91,7 @@ class CrysToGraphNet(nn.Module):
         self.fin_sp = nn.Softplus()
 
         if norm:
-            self.ln = nn.LayerNorm(h_fea_len)
+            self.ln_fc = nn.LayerNorm(h_fea_len)
             self.bn = nn.BatchNorm1d(h_fea_len)
             self.bne = nn.BatchNorm1d(nbr_fea_len)
         self.drop = nn.Dropout(drop)
@@ -129,7 +129,7 @@ class CrysToGraphNet(nn.Module):
         crys_fea = tgnn.pool.global_mean_pool(atom_fea, crystal_atom_idx)
         crys_fea = self.conv_to_fc_softplus(crys_fea)
         crys_fea = self.conv_to_fc(crys_fea)
-        if hasattr(self, 'ln'): crys_fea = self.ln(crys_fea)
+        if hasattr(self, 'bn'): crys_fea = self.ln_fc(crys_fea)
 
         for fc, sp in zip(self.fcs, self.softpluses):
             crys_fea = sp(crys_fea)
