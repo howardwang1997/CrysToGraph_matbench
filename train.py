@@ -160,10 +160,10 @@ class Trainer():
                     names = list(filter(lambda name: len(name) > 5, names))
                     index = max([int(x[5:]) for x in names]) + 1
                     self.save_model_index = index
-            path = 'checkpoints/%s_%d.pt' % (self.name, self.save_model_index)
+            path = 'checkpoints/%s_ckpt_%d.pt' % (self.name, self.save_model_index)
         else:
             save_model_index = epoch
-            path = 'checkpoints/%s_%d.pt' % (self.name, save_model_index)
+            path = 'checkpoints/%s_ckpt_%d.pt' % (self.name, save_model_index)
 
         torch.save(self.model.state_dict(), path)
 
