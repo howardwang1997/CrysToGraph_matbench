@@ -82,7 +82,7 @@ for task in mb.tasks:
         ctgn = CrysToGraphNet(atom_fea_len, nbr_fea_len, embeddings=embeddings, h_fea_len=256, n_conv=3, n_fc=2, module=module, norm=True, drop=drop)
         optimizer = optim.AdamW(ctgn.parameters(), lr=lr, betas=(0.9, 0.99), weight_decay=weight_decay)
         scheduler = WarmupMultiStepLR(optimizer, [int(epochs/3)], gamma=0.1)
-        trainer = Trainer(ctgn)
+        trainer = Trainer(ctgn, name='%s_%d' % (name, fold))
 
         # train
         train_loader = DataLoader(cd, batch_size=batch_size, shuffle=True, collate_fn=cd.collate_line_graph)
@@ -107,5 +107,16 @@ for task in mb.tasks:
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
     shutil.rmtree(name)
+
+hyperparam = vars(args)
+hyperparam['grad_accum'] = grad_accum
+hyperparam['epochs'] = epochs
+metadata = {
+    "algorithm_version": "v5.3.7",
+    "hyperparameters": hyperparam,
+    "embeddings": embeddings_path
+}
+
+mb.add_metadata(metadata)
 
 mb.to_file("CrysToGraph_benchmark.json.gz")
