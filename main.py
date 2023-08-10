@@ -111,8 +111,8 @@ for task in mb.tasks:
         shutil.rmtree(name)
 
 hyperparam = vars(args)
-hyperparam['grad_accum'] = grad_accum
-hyperparam['epochs'] = epochs
+# hyperparam['grad_accum'] = grad_accum
+# hyperparam['epochs'] = epochs
 metadata = {
     "algorithm_version": "v5.3.7",
     "hyperparameters": hyperparam,
