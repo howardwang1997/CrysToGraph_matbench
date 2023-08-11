@@ -126,7 +126,7 @@ class CrysToGraphNet(nn.Module):
         atom_fea = self.conv_sp(self.gt(self.global_transformer_2, atom_fea, crystal_atom_idx, nbr_fea_idx, nbr_fea))
 #        atom_fea = self.conv_sp(self.gt(self.global_transformer_3, atom_fea, crystal_atom_idx, nbr_fea_idx, nbr_fea))
 
-        crys_fea = tgnn.pool.global_mean_pool(atom_fea, crystal_atom_idx)
+        crys_fea = tgnn.pool.global_mean_pool(atom_fea, crystal_atom_idx.cuda())
         crys_fea = self.conv_to_fc_softplus(crys_fea)
         crys_fea = self.conv_to_fc(crys_fea)
         if hasattr(self, 'bn'): crys_fea = self.ln_fc(crys_fea)

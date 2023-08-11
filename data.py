@@ -41,13 +41,14 @@ class GaussianFilter(object):
 class CrystalDataset(torch.utils.data.Dataset):
     def __init__(self, atom_vocab, inputs, outputs, root='crystal_dataset', embedded=False):
         
-        if root[-1] is not '/': root = '%s/' % root
+        if root[-1] != '/': root = '%s/' % root
         self.root = root
         self.length = 0
         self.processed = False
 
         self.inputs = inputs
         self.outputs = outputs
+        self.length = len(self.outputs)
         self.dict_graph = {}
 
         self.atom_vocab = atom_vocab
@@ -92,7 +93,7 @@ class CrystalDataset(torch.utils.data.Dataset):
         graphs, labels = map(list, zip(*samples))
         batched_graph = dgl.batch(graphs)
 
-        return batched_graph, torch.tensor(labels)
+        return batched_graph, torch.tensor(labels).view(-1,1)
 
     @staticmethod
     def collate_line_graph(
@@ -102,7 +103,7 @@ class CrystalDataset(torch.utils.data.Dataset):
         graphs, line_graphs, labels = map(list, zip(*samples))
         batched_graph = dgl.batch(graphs)
         batched_line_graph = dgl.batch(line_graphs)
-        return batched_graph, batched_line_graph, torch.tensor(labels)
+        return batched_graph, batched_line_graph, torch.tensor(labels).view(-1,1)
 		
 
 def structure2dglgraph(structure, atom_vocab, embedding=False, max_nbr=12, max_radius=8):
