@@ -31,7 +31,7 @@ args = parser.parse_args()
 
 for task in mb.tasks:
     task.load()
-    classification = task.metadata['task_type']
+    classification = task.metadata['task_type'] == 'classification'
     name = task.dataset_name
     input = task.metadata['input_type']
 
