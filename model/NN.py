@@ -8,9 +8,9 @@ from torch_geometric.typing import OptTensor
 import dgl
 from dgl import nn as dglnn
 import dgl.function as fn
-from model_utils import dgl_get_tg_batch_tensor
+from .model_utils import dgl_get_tg_batch_tensor
 
-from transformer import GlobalTransformerLayer
+from .transformer import GlobalTransformerLayer
 
 class GaussianFilter(object):
     """
