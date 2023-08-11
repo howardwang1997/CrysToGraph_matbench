@@ -26,7 +26,7 @@ class AverageRecorder(object):
 
 
 class Trainer():
-    def __init__(self, model, name='', cuda=True):
+    def __init__(self, model, name='', cuda=True, classification: bool=False):
         self.batch_time = AverageRecorder()
         self.data_time = AverageRecorder()
         self.losses = AverageRecorder()
@@ -34,6 +34,7 @@ class Trainer():
         self.cuda = cuda and torch.cuda.is_available()
         self.model = model
         self.name = name
+        self.classification = classification
         if len(self.name) == 0:
             self.name = 'model'
         if self.cuda:
@@ -50,12 +51,11 @@ class Trainer():
 
     def train(self, train_loader, optimizer, epochs,
               scheduler=None, verbose_freq: int=100, checkpoint_by_epoch: bool=True,
-              grad_accum: int=1, classification: bool=False):
+              grad_accum: int=1):
         self.model.train()
         lrs = True
         if scheduler is None:
             lrs = False
-        self.classification = classification
 
         if self.classification:
             self.criterion_task = BCEWithLogitsLoss()
@@ -110,18 +110,19 @@ class Trainer():
         targets = torch.Tensor()
 
         end = time.time()
-        for i, data in enumerate(test_loader):
-            self.data_time.update(time.time() - end)
-            end = time.time()
+        with torch.no_grad():
+            for i, data in enumerate(test_loader):
+                self.data_time.update(time.time() - end)
+                end = time.time()
 
-            output = self.model((data[0].to(torch.device('cuda:0')), data[1].to(torch.device('cuda:0')))).cpu()
-            target = data[-1]
+                output = self.model((data[0].to(torch.device('cuda:0')), data[1].to(torch.device('cuda:0')))).cpu()
+                target = data[-1]
 
-            self.batch_time.update(time.time() - end)
-            end = time.time()
+                self.batch_time.update(time.time() - end)
+                end = time.time()
 
-            outputs = torch.cat((outputs, output), dim=0)
-            targets = torch.cat((targets, target), dim=0)
+                outputs = torch.cat((outputs, output), dim=0)
+                targets = torch.cat((targets, target), dim=0)
 
         if self.classification:
             auc = roc_auc_score(targets, outputs)
