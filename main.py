@@ -19,6 +19,7 @@ mb = MatbenchBenchmark(autoload=False)
 mb = mb.from_preset('matbench_v0.1', 'structure')
 
 parser = argparse.ArgumentParser(description='Run CrysToGraph on matbench.')
+parser.add_argument('--task', type=str, default='')
 parser.add_argument('--atom_fea_len', type=int, default=156)
 parser.add_argument('--nbr_fea_len', type=int, default=76)
 parser.add_argument('--batch_size', type=int, default=32)
@@ -50,6 +51,9 @@ for task in mb.tasks:
         embeddings_path = 'embeddings_84_cgcnn.pt'
     else:
         embeddings_path = ''
+
+    if args.task not in name:
+        continue
 
     # mkdir
     try:
