@@ -104,7 +104,7 @@ class CrystalDataset(torch.utils.data.Dataset):
         batched_graph = dgl.batch(graphs)
         batched_line_graph = dgl.batch(line_graphs)
         return batched_graph, batched_line_graph, torch.tensor(labels).view(-1,1)
-		
+
 
 def structure2dglgraph(structure, atom_vocab, embedding=False, max_nbr=12, max_radius=8):
     """

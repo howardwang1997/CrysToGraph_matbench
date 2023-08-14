@@ -67,6 +67,8 @@ class Trainer():
         for epoch in range(epochs):
             loss_list = []
             self.losses.reset()
+            self.data_time.reset()
+            self.batch_time.reset()
 
             for i, data in enumerate(train_loader):
                 self.data_time.update(time.time() - end)
