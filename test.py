@@ -31,7 +31,7 @@ for task in mb.tasks:
     task.load()
     classification = task.metadata['task_type'] == 'classification'
     name = task.dataset_name
-    input = task.metadata['input_type']
+    input_type = task.metadata['input_type']
 
     # hyperparameters
     atom_fea_len = args.atom_fea_len
