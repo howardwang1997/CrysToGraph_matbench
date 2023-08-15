@@ -1,9 +1,7 @@
 import joblib
-import os
-import json
 import numpy as np
 
-from typing import Any, Dict, Union, Optional, Tuple, List
+from typing import Tuple, List
 import dgl
 
 
@@ -12,30 +10,7 @@ import torch
 from graph_utils import laplacian_positional_encoding as lpe
 from graph_utils import random_walk_positional_encoding as rwpe
 from graph_utils import prepare_line_graph_batch
-from graph_utils import compute_bond_cosines, detect_radius, convert_spherical
-
-class GaussianFilter(object):
-    """
-    Expands the distance by Gaussian basis.
-    Unit: angstrom
-    """
-    def __init__(self, dmin=0, dmax=6, step=0.2, var=None):
-        """
-        Parameters
-        ----------
-        dmin: float
-          Minimum interatomic distance
-        dmax: float
-          Maximum interatomic distance
-        step: float
-          Step size for the Gaussian filter
-        """
-        assert dmin < dmax
-        assert dmax - dmin > step
-        self.filter = np.arange(dmin, dmax+step, step)
-        if var is None:
-            var = step
-        self.var = var
+from graph_utils import compute_bond_cosines, convert_spherical
 		
 
 class CrystalDataset(torch.utils.data.Dataset):
@@ -54,11 +29,6 @@ class CrystalDataset(torch.utils.data.Dataset):
         self.atom_vocab = atom_vocab
         self.embedded = embedded
         self.prepare_batch = prepare_line_graph_batch
-
-        self.gfs =  [GaussianFilter(0, 8, 0.2),
-                     GaussianFilter(0, 3.2, 0.2),
-                     GaussianFilter(-3.2, 3.2, 0.4),
-                     GaussianFilter(-1.4, 1.5, 0.1)]
         
         super().__init__()
 
