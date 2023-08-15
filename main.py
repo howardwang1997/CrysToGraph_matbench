@@ -64,15 +64,16 @@ for task in mb.tasks:
     for fold in task.folds:
         train_inputs, train_outputs = task.get_train_and_val_data(fold)
 
-        if len(train_inputs) < 2000:
-            epochs = 2000
-        elif len(train_inputs) < 10000:
-            epochs = 1000
-        elif len(train_inputs) < 20000:
-            epochs = 600
-            grad_accum = 2
-        else:
-            grad_accum = 8
+        if epochs == 300:
+            if len(train_inputs) < 2000:
+                epochs = 2000
+            elif len(train_inputs) < 10000:
+                epochs = 1000
+            elif len(train_inputs) < 20000:
+                epochs = 600
+                grad_accum = 2
+            else:
+                grad_accum = 8
 
         # define atom_vocab, dataset, model, trainer
         embeddings = torch.load(embeddings_path).cuda()
