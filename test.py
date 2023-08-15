@@ -21,6 +21,7 @@ mb = mb.from_preset('matbench_v0.1', 'structure')
 parser = argparse.ArgumentParser(description='Run CrysToGraph on matbench.')
 parser.add_argument('checkpoint', type=str)
 parser.add_argument('--task', type=str, default='dielectric')
+parser.add_argument('--fold', type=int, default=-1)
 parser.add_argument('--atom_fea_len', type=int, default=156)
 parser.add_argument('--nbr_fea_len', type=int, default=76)
 parser.add_argument('--batch_size', type=int, default=10)
@@ -55,17 +56,9 @@ for task in mb.tasks:
         pass
 
     for fold in task.folds:
-        train_inputs, train_outputs = task.get_train_and_val_data(fold)
-
-        if len(train_inputs) < 2000:
-            epochs = 2000
-        elif len(train_inputs) < 10000:
-            epochs = 1000
-        elif len(train_inputs) < 20000:
-            epochs = 600
-            grad_accum = 2
-        else:
-            grad_accum = 8
+        if args.fold >= 0 and args.fold <= 5:
+            if fold != args.fold:
+                continue
 
         # define atom_vocab, dataset, model, trainer
         embeddings = torch.load(embeddings_path).cuda()
