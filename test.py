@@ -29,7 +29,10 @@ parser.add_argument('--rmtree', type=bool, default=False)
 args = parser.parse_args()
 
 for task in mb.tasks:
+    if args.task not in name:
+        continue
     task.load()
+
     classification = task.metadata['task_type'] == 'classification'
     name = task.dataset_name
     input_type = task.metadata['input_type']
@@ -45,9 +48,6 @@ for task in mb.tasks:
         embeddings_path = 'embeddings_84_cgcnn.pt'
     else:
         embeddings_path = ''
-
-    if args.task not in name:
-        continue
 
     # mkdir
     try:
