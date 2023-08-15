@@ -29,12 +29,12 @@ parser.add_argument('--rmtree', type=bool, default=False)
 args = parser.parse_args()
 
 for task in mb.tasks:
+    name = task.dataset_name
     if args.task not in name:
         continue
     task.load()
 
     classification = task.metadata['task_type'] == 'classification'
-    name = task.dataset_name
     input_type = task.metadata['input_type']
 
     # hyperparameters
