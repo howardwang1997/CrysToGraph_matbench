@@ -50,7 +50,7 @@ class Trainer():
         return self.criterion(outputs[0], outputs[1])
 
     def train(self, train_loader, optimizer, epochs,
-              scheduler=None, verbose_freq: int=100, checkpoint_by_epoch: bool=True,
+              scheduler=None, verbose_freq: int=100, checkpoint_freq: int=20,
               grad_accum: int=1):
         self.model.train()
         lrs = True
@@ -102,8 +102,8 @@ class Trainer():
             if lrs:
                 scheduler.step()
             self.loss_list.append(loss_list)
-            if epoch % 20 == 0:
-                self.save_checkpoints(epoch, checkpoint_by_epoch)
+            if epoch % checkpoint_freq == 0:
+                self.save_checkpoints(epoch)
         self.save_state_dict()
 
     def predict(self, test_loader):
@@ -147,27 +147,29 @@ class Trainer():
             data_time=self.data_time, loss=self.losses)
         )
 
-    def save_checkpoints(self, epoch=0, by_epoch=False):
+    def save_checkpoints(self, epoch=0):
         try:
             os.mkdir('checkpoints')
         except FileExistsError:
             pass
 
-        if not by_epoch:
-            if not hasattr(self, 'save_model_index'):
-                names = list(filter(lambda name: self.name in name, os.listdir('checkpoints/')))
-                if len(names) == 0:
-                    self.save_model_index = 0
-                else:
-                    names = [x.split('.')[0] for x in names]
-                    names = list(filter(lambda name: name[:5] == self.name, names))
-                    names = list(filter(lambda name: len(name) > 5, names))
-                    index = max([int(x[5:]) for x in names]) + 1
-                    self.save_model_index = index
-            path = 'checkpoints/%s_ckpt_%d.pt' % (self.name, self.save_model_index)
-        else:
-            save_model_index = epoch
-            path = 'checkpoints/%s_ckpt_%d.pt' % (self.name, save_model_index)
+        # if not by_epoch:
+        #     if not hasattr(self, 'save_model_index'):
+        #         names = list(filter(lambda name: self.name in name, os.listdir('checkpoints/')))
+        #         if len(names) == 0:
+        #             self.save_model_index = 0
+        #         else:
+        #             names = [x.split('.')[0] for x in names]
+        #             names = list(filter(lambda name: name[:5] == self.name, names))
+        #             names = list(filter(lambda name: len(name) > 5, names))
+        #             index = max([int(x[5:]) for x in names]) + 1
+        #             self.save_model_index = index
+        #     path = 'checkpoints/%s_ckpt_%d.pt' % (self.name, self.save_model_index)
+        # else:
+        #     save_model_index = epoch
+        #     path = 'checkpoints/%s_ckpt_%d.pt' % (self.name, save_model_index)
+        save_model_index = epoch
+        path = 'checkpoints/%s_ckpt_%d.pt' % (self.name, save_model_index)
 
         torch.save(self.model.state_dict(), path)
 
