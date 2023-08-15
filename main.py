@@ -20,13 +20,15 @@ mb = mb.from_preset('matbench_v0.1', 'structure')
 
 parser = argparse.ArgumentParser(description='Run CrysToGraph on matbench.')
 parser.add_argument('--task', type=str, default='')
+parser.add_argument('--checkpoint', type=str, default='')
 parser.add_argument('--atom_fea_len', type=int, default=156)
 parser.add_argument('--nbr_fea_len', type=int, default=76)
 parser.add_argument('--batch_size', type=int, default=32)
-parser.add_argument('--epochs', type=int, default=300)
+parser.add_argument('--epochs', type=int, default=-1)
 parser.add_argument('--weight_decay', type=float, default=0.0)
 parser.add_argument('--lr', type=float, default=0.0001)
 parser.add_argument('--grad_accum', type=int, default=1)
+parser.add_argument('--milestone', type=int, default=-1)
 parser.add_argument('--rmtree', type=bool, default=True)
 args = parser.parse_args()
 
@@ -34,7 +36,7 @@ for task in mb.tasks:
     task.load()
     classification = task.metadata['task_type'] == 'classification'
     name = task.dataset_name
-    input = task.metadata['input_type']
+    input_type = task.metadata['input_type']
 
     # hyperparameters
     atom_fea_len = args.atom_fea_len
@@ -44,6 +46,7 @@ for task in mb.tasks:
     weight_decay = args.weight_decay
     lr = args.lr
     grad_accum = args.grad_accum
+    pretrained = False if args.checkpoint == '' else True
 
     if atom_fea_len == 156:
         embeddings_path = 'embeddings_84_64catcgcnn.pt'
@@ -64,7 +67,7 @@ for task in mb.tasks:
     for fold in task.folds:
         train_inputs, train_outputs = task.get_train_and_val_data(fold)
 
-        if epochs == 300:
+        if epochs == -1:
             if len(train_inputs) < 2000:
                 epochs = 2000
             elif len(train_inputs) < 10000:
@@ -73,7 +76,12 @@ for task in mb.tasks:
                 epochs = 600
                 grad_accum = 2
             else:
+                epochs = 300
                 grad_accum = 8
+        if args.milestone > 0:
+            milestone = args.milestone
+        else:
+            milestone = int(epochs/3)
 
         # define atom_vocab, dataset, model, trainer
         embeddings = torch.load(embeddings_path).cuda()
@@ -86,8 +94,10 @@ for task in mb.tasks:
                  nn.ModuleList([TransformerConvLayer(76, 24, 8, edge_dim=30, dropout=0.0) for _ in range(3)])
         drop = 0.0 if not classification else 0.2
         ctgn = CrysToGraphNet(atom_fea_len, nbr_fea_len, embeddings=embeddings, h_fea_len=256, n_conv=3, n_fc=2, module=module, norm=True, drop=drop)
+        if pretrained:
+            ctgn.load_state_dict(torch.load(args.checkpoint), strict=False)
         optimizer = optim.AdamW(ctgn.parameters(), lr=lr, betas=(0.9, 0.99), weight_decay=weight_decay)
-        scheduler = WarmupMultiStepLR(optimizer, [int(epochs/3)], gamma=0.1)
+        scheduler = WarmupMultiStepLR(optimizer, [milestone], gamma=0.1)
         trainer = Trainer(ctgn, name='%s_%d' % (name, fold), classification=classification)
 
         # train

@@ -102,7 +102,8 @@ class Trainer():
             if lrs:
                 scheduler.step()
             self.loss_list.append(loss_list)
-            self.save_checkpoints(epoch, checkpoint_by_epoch)
+            if epoch % 20 == 0:
+                self.save_checkpoints(epoch, checkpoint_by_epoch)
         self.save_state_dict()
 
     def predict(self, test_loader):
