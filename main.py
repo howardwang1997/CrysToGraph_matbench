@@ -28,7 +28,8 @@ parser.add_argument('--epochs', type=int, default=-1)
 parser.add_argument('--weight_decay', type=float, default=0.0)
 parser.add_argument('--lr', type=float, default=0.0001)
 parser.add_argument('--grad_accum', type=int, default=1)
-parser.add_argument('--milestone', type=int, default=-1)
+parser.add_argument('--milestone1', type=int, default=-1)
+parser.add_argument('--milestone2', type=int, default=-1)
 parser.add_argument('--rmtree', type=bool, default=True)
 args = parser.parse_args()
 
@@ -78,10 +79,16 @@ for task in mb.tasks:
             else:
                 epochs = 300
                 grad_accum = 8
-        if args.milestone > 0:
-            milestone = args.milestone
+
+        milestone2 = 99999
+        if args.milestone1 > 0:
+            milestone1 = args.milestone1
+            if args.mileston2 > milestone1:
+                milestone2 = args.milestone2
         else:
-            milestone = int(epochs/3)
+            milestone1 = int(epochs/3)
+
+        milestones = [milestone1, milestone2]
 
         # define atom_vocab, dataset, model, trainer
         embeddings = torch.load(embeddings_path).cuda()
@@ -97,7 +104,7 @@ for task in mb.tasks:
         if pretrained:
             ctgn.load_state_dict(torch.load(args.checkpoint), strict=False)
         optimizer = optim.AdamW(ctgn.parameters(), lr=lr, betas=(0.9, 0.99), weight_decay=weight_decay)
-        scheduler = WarmupMultiStepLR(optimizer, [milestone], gamma=0.1)
+        scheduler = WarmupMultiStepLR(optimizer, milestones, gamma=0.1)
         trainer = Trainer(ctgn, name='%s_%d' % (name, fold), classification=classification)
 
         # train
