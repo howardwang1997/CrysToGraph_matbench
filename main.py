@@ -50,9 +50,7 @@ for task in mb.tasks:
     pretrained = False if args.checkpoint == '' else True
 
     if atom_fea_len == 156:
-        embeddings_path = 'embeddings_84_64catcgcnn.pt'
-    elif atom_fea_len == 92:
-        embeddings_path = 'embeddings_84_cgcnn.pt'
+        embeddings_path = 'embeddings_86_64catcgcnn.pt'
     else:
         embeddings_path = ''
 
