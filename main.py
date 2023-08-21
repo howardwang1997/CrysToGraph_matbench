@@ -75,7 +75,7 @@ for task in mb.tasks:
                 epochs = 600
                 grad_accum = 2
             else:
-                epochs = 300
+                epochs = 500
                 grad_accum = 8
 
         milestone2 = 99999
@@ -95,8 +95,8 @@ for task in mb.tasks:
                             atom_vocab=atom_vocab,
                             inputs=train_inputs,
                             outputs=train_outputs)
-        module = nn.ModuleList([TransformerConvLayer(256, 32, 8, edge_dim=76, dropout=0.0) for _ in range(3)]), \
-                 nn.ModuleList([TransformerConvLayer(76, 24, 8, edge_dim=30, dropout=0.0) for _ in range(3)])
+        module = nn.ModuleList([TransformerConvLayer(256, 32, 8, edge_dim=76, dropout=0.0) for _ in range(5)]), \
+                 nn.ModuleList([TransformerConvLayer(76, 24, 8, edge_dim=30, dropout=0.0) for _ in range(5)])
         drop = 0.0 if not classification else 0.2
         ctgn = CrysToGraphNet(atom_fea_len, nbr_fea_len, embeddings=embeddings, h_fea_len=256, n_conv=3, n_fc=2, module=module, norm=True, drop=drop)
         if pretrained:
