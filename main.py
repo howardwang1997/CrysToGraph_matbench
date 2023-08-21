@@ -140,4 +140,4 @@ metadata = {
 
 mb.add_metadata(metadata)
 
-mb.to_file("CrysToGraph_benchmark.json.gz")
+mb.to_file("CrysToGraph_benchmark%s.json.gz" % args.task)
