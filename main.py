@@ -24,6 +24,7 @@ parser.add_argument('--checkpoint', type=str, default='')
 parser.add_argument('--atom_fea_len', type=int, default=156)
 parser.add_argument('--nbr_fea_len', type=int, default=76)
 parser.add_argument('--batch_size', type=int, default=32)
+parser.add_argument('--n_conv', type=int, default=5)
 parser.add_argument('--epochs', type=int, default=-1)
 parser.add_argument('--weight_decay', type=float, default=0.0)
 parser.add_argument('--lr', type=float, default=0.0001)
@@ -94,10 +95,10 @@ for task in mb.tasks:
                             atom_vocab=atom_vocab,
                             inputs=train_inputs,
                             outputs=train_outputs)
-        module = nn.ModuleList([TransformerConvLayer(256, 32, 8, edge_dim=76, dropout=0.0) for _ in range(5)]), \
-                 nn.ModuleList([TransformerConvLayer(76, 24, 8, edge_dim=30, dropout=0.0) for _ in range(5)])
+        module = nn.ModuleList([TransformerConvLayer(256, 32, 8, edge_dim=76, dropout=0.0) for _ in range(args.n_conv)]), \
+                 nn.ModuleList([TransformerConvLayer(76, 24, 8, edge_dim=30, dropout=0.0) for _ in range(args.n_conv)])
         drop = 0.0 if not classification else 0.2
-        ctgn = CrysToGraphNet(atom_fea_len, nbr_fea_len, embeddings=embeddings, h_fea_len=256, n_conv=3, n_fc=2, module=module, norm=True, drop=drop)
+        ctgn = CrysToGraphNet(atom_fea_len, nbr_fea_len, embeddings=embeddings, h_fea_len=256, n_conv=args.n_conv, n_fc=2, module=module, norm=True, drop=drop)
         if pretrained:
             ctgn.load_state_dict(torch.load(args.checkpoint), strict=False)
         optimizer = optim.AdamW(ctgn.parameters(), lr=lr, betas=(0.9, 0.99), weight_decay=weight_decay)
