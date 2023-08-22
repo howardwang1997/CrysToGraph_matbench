@@ -30,7 +30,7 @@ parser.add_argument('--lr', type=float, default=0.0001)
 parser.add_argument('--grad_accum', type=int, default=1)
 parser.add_argument('--milestone1', type=int, default=-1)
 parser.add_argument('--milestone2', type=int, default=-1)
-parser.add_argument('--rmtree', type=bool, default=True)
+parser.add_argument('--rmtree', action='store_true')
 args = parser.parse_args()
 
 for task in mb.tasks:
