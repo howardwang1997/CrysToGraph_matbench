@@ -49,10 +49,9 @@ for task in mb.tasks:
     grad_accum = args.grad_accum
     pretrained = False if args.checkpoint == '' else True
 
+    embeddings_path = ''
     if atom_fea_len == 156:
         embeddings_path = 'embeddings_86_64catcgcnn.pt'
-    else:
-        embeddings_path = ''
 
     if args.task not in name:
         continue
@@ -102,7 +101,7 @@ for task in mb.tasks:
         if pretrained:
             ctgn.load_state_dict(torch.load(args.checkpoint), strict=False)
         optimizer = optim.AdamW(ctgn.parameters(), lr=lr, betas=(0.9, 0.99), weight_decay=weight_decay)
-        scheduler = WarmupMultiStepLR(optimizer, milestones, gamma=0.1)
+        scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones, gamma=0.1)
         trainer = Trainer(ctgn, name='%s_%d' % (name, fold), classification=classification)
 
         # train
@@ -140,4 +139,4 @@ metadata = {
 
 mb.add_metadata(metadata)
 
-mb.to_file("CrysToGraph_benchmark.json.gz")
+mb.to_file("CrysToGraph_benchmark%s.json.gz" % args.task)
