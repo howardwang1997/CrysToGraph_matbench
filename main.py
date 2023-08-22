@@ -80,7 +80,7 @@ for task in mb.tasks:
         milestone2 = 99999
         if args.milestone1 > 0:
             milestone1 = args.milestone1
-            if args.mileston2 > milestone1:
+            if args.milestone2 > milestone1:
                 milestone2 = args.milestone2
         else:
             milestone1 = int(epochs/3)
