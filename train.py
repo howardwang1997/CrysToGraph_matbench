@@ -128,8 +128,8 @@ class Trainer():
                 targets = torch.cat((targets, target), dim=0)
 
         if self.classification:
-            auc = roc_auc_score(targets, outputs)
-            f1 = f1_score(targets, outputs)
+            auc = roc_auc_score(targets, outputs>0)
+            f1 = f1_score(targets, outputs>0)
             print('%s VALIDATION: ROC_AUC_SCORE= %.4f, F1_SCORE= %.4f' % (self.name, float(auc), float(f1)))
         else:
             mae = L1Loss()(outputs, targets)
