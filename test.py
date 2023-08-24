@@ -22,6 +22,7 @@ parser = argparse.ArgumentParser(description='Run CrysToGraph on matbench.')
 parser.add_argument('checkpoint', type=str)
 parser.add_argument('--task', type=str, default='dielectric')
 parser.add_argument('--fold', type=int, default=-1)
+parser.add_argument('--n_conv', type=int, default=5)
 parser.add_argument('--atom_fea_len', type=int, default=156)
 parser.add_argument('--nbr_fea_len', type=int, default=76)
 parser.add_argument('--batch_size', type=int, default=10)
@@ -43,9 +44,7 @@ for task in mb.tasks:
     batch_size = args.batch_size
 
     if atom_fea_len == 156:
-        embeddings_path = 'embeddings_84_64catcgcnn.pt'
-    elif atom_fea_len == 92:
-        embeddings_path = 'embeddings_84_cgcnn.pt'
+        embeddings_path = 'embeddings_86_64catcgcnn.pt'
     else:
         embeddings_path = ''
 
@@ -63,9 +62,9 @@ for task in mb.tasks:
         # define atom_vocab, dataset, model, trainer
         embeddings = torch.load(embeddings_path).cuda()
         atom_vocab = joblib.load('atom_vocab.jbl')
-        module = nn.ModuleList([TransformerConvLayer(256, 32, 8, edge_dim=76, dropout=0.0) for _ in range(3)]), \
-                 nn.ModuleList([TransformerConvLayer(76, 24, 8, edge_dim=30, dropout=0.0) for _ in range(3)])
-        ctgn = CrysToGraphNet(atom_fea_len, nbr_fea_len, embeddings=embeddings, h_fea_len=256, n_conv=3, n_fc=2, module=module, norm=True)
+        module = nn.ModuleList([TransformerConvLayer(256, 32, 8, edge_dim=76, dropout=0.0) for _ in range(args.n_conv)]), \
+                 nn.ModuleList([TransformerConvLayer(76, 24, 8, edge_dim=30, dropout=0.0) for _ in range(args.n_conv)])
+        ctgn = CrysToGraphNet(atom_fea_len, nbr_fea_len, embeddings=embeddings, h_fea_len=256, n_conv=args.n_conv, n_fc=2, module=module, norm=True)
         ctgn.load_state_dict(torch.load(args.checkpoint))
         trainer = Trainer(ctgn, name='%s_%d' % (name, fold), classification=classification)
 
