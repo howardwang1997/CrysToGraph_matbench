@@ -26,7 +26,6 @@ parser.add_argument('--n_conv', type=int, default=5)
 parser.add_argument('--atom_fea_len', type=int, default=156)
 parser.add_argument('--nbr_fea_len', type=int, default=76)
 parser.add_argument('--batch_size', type=int, default=10)
-parser.add_argument('--rmtree', type=bool, default=False)
 args = parser.parse_args()
 
 for task in mb.tasks:
@@ -79,5 +78,3 @@ for task in mb.tasks:
 
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
-    if args.rmtree:
-        shutil.rmtree(name)
