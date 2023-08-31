@@ -73,13 +73,13 @@ class CrysToGraphNet(nn.Module):
         self.pe_to_hidden = nn.Linear(46, 256)
 
         self.global_transformer = GlobalTransformerLayer(256, 32, 8, edge_dim=76)
-        self.global_transformer_2 = GlobalTransformerLayer(256, 32, 8, edge_dim=76)
+#        self.global_transformer_2 = GlobalTransformerLayer(256, 32, 8, edge_dim=76)
 #        self.global_transformer_3 = GlobalTransformerLayer(256, 32, 8, edge_dim=76)
         self.conv_sp = nn.Softplus()
             
         self.conv_to_fc = nn.Linear(h_fea_len, h_fea_len)
         self.conv_to_fc_softplus = nn.Softplus()
-        self.lnns = nn.Sequential(*[nn.LayerNorm(nbr_fea_len) for _ in range(n_conv)])
+        self.lnns = nn.Sequential(*[nn.LayerNorm(nbr_fea_len) for _ in range(len(self.conv))])
         
         self.fcs = nn.ModuleList([nn.Linear(in_features=h_fea_len,
                                             out_features=h_fea_len,
@@ -123,7 +123,7 @@ class CrysToGraphNet(nn.Module):
 
         atom_fea = atom_fea + pe
         atom_fea = self.conv_sp(self.gt(self.global_transformer, atom_fea, crystal_atom_idx, nbr_fea_idx, nbr_fea))
-        atom_fea = self.conv_sp(self.gt(self.global_transformer_2, atom_fea, crystal_atom_idx, nbr_fea_idx, nbr_fea))
+#        atom_fea = self.conv_sp(self.gt(self.global_transformer_2, atom_fea, crystal_atom_idx, nbr_fea_idx, nbr_fea))
 #        atom_fea = self.conv_sp(self.gt(self.global_transformer_3, atom_fea, crystal_atom_idx, nbr_fea_idx, nbr_fea))
 
         crys_fea = tgnn.pool.global_mean_pool(atom_fea, crystal_atom_idx.cuda())
