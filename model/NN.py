@@ -39,7 +39,7 @@ class CrysToGraphNet(nn.Module):
     Contrastive pre-training of convolutions.
     """
     def __init__(self, orig_atom_fea_len, nbr_fea_len,
-                atom_fea_len=64, line_fea_len=30, n_conv=3, h_fea_len=128, n_fc=3,
+                atom_fea_len=64, line_fea_len=30, n_conv=3, h_fea_len=128, n_fc=3, n_gt=1,
                 embeddings=None, module=None, norm=False, drop=0.0):
         super(CrysToGraphNet, self).__init__()
         self.embeddings = embeddings
@@ -72,9 +72,8 @@ class CrysToGraphNet(nn.Module):
 
         self.pe_to_hidden = nn.Linear(46, 256)
 
-        self.global_transformer = GlobalTransformerLayer(256, 32, 8, edge_dim=76)
-#        self.global_transformer_2 = GlobalTransformerLayer(256, 32, 8, edge_dim=76)
-#        self.global_transformer_3 = GlobalTransformerLayer(256, 32, 8, edge_dim=76)
+        self.gts = nn.Sequential(*[GlobalTransformerLayer(256, 32, 8, edge_dim=76)
+                                   for _ in range(n_gt)])
         self.conv_sp = nn.Softplus()
             
         self.conv_to_fc = nn.Linear(h_fea_len, h_fea_len)
@@ -122,9 +121,8 @@ class CrysToGraphNet(nn.Module):
             nbr_fea = self.bne(nbr_fea)
 
         atom_fea = atom_fea + pe
-        atom_fea = self.conv_sp(self.gt(self.global_transformer, atom_fea, crystal_atom_idx, nbr_fea_idx, nbr_fea))
-#        atom_fea = self.conv_sp(self.gt(self.global_transformer_2, atom_fea, crystal_atom_idx, nbr_fea_idx, nbr_fea))
-#        atom_fea = self.conv_sp(self.gt(self.global_transformer_3, atom_fea, crystal_atom_idx, nbr_fea_idx, nbr_fea))
+        for idx in range(len(self.gts)):
+            atom_fea = self.conv_sp(self.do_gt(self.gts[idx], atom_fea, crystal_atom_idx, nbr_fea_idx, nbr_fea))
 
         crys_fea = tgnn.pool.global_mean_pool(atom_fea, crystal_atom_idx.cuda())
         crys_fea = self.conv_to_fc_softplus(crys_fea)
