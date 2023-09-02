@@ -78,7 +78,7 @@ class CrysToGraphNet(nn.Module):
             
         self.conv_to_fc = nn.Linear(h_fea_len, h_fea_len)
         self.conv_to_fc_softplus = nn.Softplus()
-        self.lnns = nn.Sequential(*[nn.LayerNorm(nbr_fea_len) for _ in range(len(self.conv))])
+        self.lnns = nn.Sequential(*[nn.LayerNorm(nbr_fea_len) for _ in range(len(self.convs))])
         
         self.fcs = nn.ModuleList([nn.Linear(in_features=h_fea_len,
                                             out_features=h_fea_len,
