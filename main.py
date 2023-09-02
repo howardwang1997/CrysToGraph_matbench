@@ -14,6 +14,7 @@ from train import Trainer
 from model.NN import CrysToGraphNet
 from model.bert_transformer import TransformerConvLayer
 from model.scheduler import WarmupMultiStepLR
+from model.model_utils import get_finetune_model_params
 
 mb = MatbenchBenchmark(autoload=False)
 mb = mb.from_preset('matbench_v0.1', 'structure')
@@ -25,6 +26,8 @@ parser.add_argument('--atom_fea_len', type=int, default=156)
 parser.add_argument('--nbr_fea_len', type=int, default=76)
 parser.add_argument('--batch_size', type=int, default=32)
 parser.add_argument('--n_conv', type=int, default=5)
+parser.add_argument('--n_fc', type=int, default=2)
+parser.add_argument('--n_gt', type=int, default=1)
 parser.add_argument('--epochs', type=int, default=-1)
 parser.add_argument('--weight_decay', type=float, default=0.0)
 parser.add_argument('--lr', type=float, default=0.0001)
@@ -98,10 +101,16 @@ for task in mb.tasks:
         module = nn.ModuleList([TransformerConvLayer(256, 32, 8, edge_dim=76, dropout=0.0) for _ in range(args.n_conv)]), \
                  nn.ModuleList([TransformerConvLayer(76, 24, 8, edge_dim=30, dropout=0.0) for _ in range(args.n_conv)])
         drop = 0.0 if not classification else 0.2
-        ctgn = CrysToGraphNet(atom_fea_len, nbr_fea_len, embeddings=embeddings, h_fea_len=256, n_conv=args.n_conv, n_fc=2, module=module, norm=True, drop=drop)
+        ctgn = CrysToGraphNet(atom_fea_len, nbr_fea_len,
+                              embeddings=embeddings, h_fea_len=256, n_conv=args.n_conv,
+                              n_fc=args.n_fc, n_gt=args.n_gt, module=module, norm=True, drop=drop)
+
         if pretrained:
             ctgn.load_state_dict(torch.load(args.checkpoint), strict=False)
-        optimizer = optim.AdamW(ctgn.parameters(), lr=lr, betas=(0.9, 0.99), weight_decay=weight_decay)
+            optimizer = optim.AdamW(get_finetune_model_params(ctgn, lr, weight_decay),
+                                    lr=lr, betas=(0.9, 0.99), weight_decay=weight_decay)
+        else:
+            optimizer = optim.AdamW(ctgn.parameters(), lr=lr, betas=(0.9, 0.99), weight_decay=weight_decay)
         scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones, gamma=0.1)
         trainer = Trainer(ctgn, name='%s_%d' % (name, fold), classification=classification)
 
