@@ -114,8 +114,8 @@ class CrysToGraphNet(nn.Module):
         line_fea = self.line_to_line(line_fea)
 
         for idx in range(len(self.convs)):
-            atom_fea, nbr_fea = self.mp(self.convs[idx], self.line_convs[idx], 
-                     atom_fea, nbr_fea_idx, nbr_fea, line_fea_idx, line_fea, idx)
+            atom_fea, nbr_fea = self.do_mp(self.convs[idx], self.line_convs[idx],
+                                           atom_fea, nbr_fea_idx, nbr_fea, line_fea_idx, line_fea, idx)
         if hasattr(self, 'bn'):
             atom_fea = self.bn(atom_fea)
             nbr_fea = self.bne(nbr_fea)
@@ -141,11 +141,13 @@ class CrysToGraphNet(nn.Module):
                 
         return out
 
-    def mp(self, conv_n, conv_l, atom_fea, nbr_fea_idx, nbr_fea, line_fea_idx, line_fea, idx):
+    @staticmethod
+    def do_mp(self, conv_n, conv_l, atom_fea, nbr_fea_idx, nbr_fea, line_fea_idx, line_fea, idx):
         nbr_fea, line_fea = conv_l(nbr_fea, line_fea_idx, line_fea)
         atom_fea, line_fea = conv_n(atom_fea, nbr_fea_idx, self.lnns[idx](nbr_fea))
         return atom_fea, nbr_fea
 
-    def gt(self, gt_layer, atom_fea, crystal_atom_idx, nbr_fea_idx, nbr_fea):
+    @staticmethod
+    def do_gt(self, gt_layer, atom_fea, crystal_atom_idx, nbr_fea_idx, nbr_fea):
         return gt_layer(atom_fea, crystal_atom_idx, nbr_fea_idx, nbr_fea)
     
