@@ -143,7 +143,8 @@ class CrysToGraphNet(nn.Module):
 
     def do_mp(self, conv_n, conv_l, atom_fea, nbr_fea_idx, nbr_fea, line_fea_idx, line_fea, idx):
         nbr_fea, line_fea = conv_l(nbr_fea, line_fea_idx, line_fea)
-        atom_fea, line_fea = conv_n(atom_fea, nbr_fea_idx, self.lnns[idx](nbr_fea))
+        atom_fea, nbr_fea = conv_n(atom_fea, nbr_fea_idx, self.lnns[idx](idxnbr_fea))
+        atom_fea, nbr_fea = conv_n(atom_fea, nbr_fea_idx, nbr_fea)
         return atom_fea, nbr_fea
 
     def do_gt(self, gt_layer, atom_fea, crystal_atom_idx, nbr_fea_idx, nbr_fea):
