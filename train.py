@@ -153,21 +153,6 @@ class Trainer():
         except FileExistsError:
             pass
 
-        # if not by_epoch:
-        #     if not hasattr(self, 'save_model_index'):
-        #         names = list(filter(lambda name: self.name in name, os.listdir('checkpoints/')))
-        #         if len(names) == 0:
-        #             self.save_model_index = 0
-        #         else:
-        #             names = [x.split('.')[0] for x in names]
-        #             names = list(filter(lambda name: name[:5] == self.name, names))
-        #             names = list(filter(lambda name: len(name) > 5, names))
-        #             index = max([int(x[5:]) for x in names]) + 1
-        #             self.save_model_index = index
-        #     path = 'checkpoints/%s_ckpt_%d.pt' % (self.name, self.save_model_index)
-        # else:
-        #     save_model_index = epoch
-        #     path = 'checkpoints/%s_ckpt_%d.pt' % (self.name, save_model_index)
         save_model_index = epoch
         path = 'checkpoints/%s_ckpt_%d.pt' % (self.name, save_model_index)
 

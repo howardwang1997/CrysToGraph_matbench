@@ -35,9 +35,27 @@ parser.add_argument('--grad_accum', type=int, default=1)
 parser.add_argument('--milestone1', type=int, default=-1)
 parser.add_argument('--milestone2', type=int, default=-1)
 parser.add_argument('--rmtree', action='store_true')
+parser.add_argument('--fold', type=int, default=-1)
+parser.add_argument('--checkpoint0', type=str, default='')
+parser.add_argument('--checkpoint1', type=str, default='')
+parser.add_argument('--checkpoint2', type=str, default='')
+parser.add_argument('--checkpoint3', type=str, default='')
+parser.add_argument('--checkpoint4', type=str, default='')
+parser.add_argument('--remarks', type=str, default='')
 args = parser.parse_args()
 
+map_checkpoint = {
+    0: args.checkpoint0,
+    1: args.checkpoint1,
+    2: args.checkpoint2,
+    3: args.checkpoint3,
+    4: args.checkpoint4,
+}
+
 for task in mb.tasks:
+    if args.task not in task.dataset_name:
+        continue
+
     task.load()
     classification = task.metadata['task_type'] == 'classification'
     name = task.dataset_name
@@ -52,13 +70,13 @@ for task in mb.tasks:
     lr = args.lr
     grad_accum = args.grad_accum
     pretrained = False if args.checkpoint == '' else True
+    separated_checkpoint = False
+    if args.checkpoint0 != '' and args.checkpoint1 != '' and args.checkpoint2 != '' and args.checkpoint3 != '' and args.checkpoint4 != '':
+        pretrained = separated_checkpoint = True
 
     embeddings_path = ''
     if atom_fea_len == 156:
         embeddings_path = 'embeddings_86_64catcgcnn.pt'
-
-    if args.task not in name:
-        continue
 
     # mkdir
     try:
@@ -67,6 +85,13 @@ for task in mb.tasks:
         pass
 
     for fold in task.folds:
+        if args.fold != -1 and fold != args.fold:
+            continue
+        if pretrained:
+            if separated_checkpoint:
+                checkpoint = map_checkpoint[fold]
+            else:
+                checkpoint = args.checkpoint
         train_inputs, train_outputs = task.get_train_and_val_data(fold)
 
         if epochs == -1:
@@ -106,13 +131,13 @@ for task in mb.tasks:
                               n_fc=args.n_fc, n_gt=args.n_gt, module=module, norm=True, drop=drop)
 
         if pretrained:
-            ctgn.load_state_dict(torch.load(args.checkpoint), strict=False)
+            ctgn.load_state_dict(torch.load(checkpoint), strict=True)
             optimizer = optim.AdamW(get_finetune_model_params(ctgn, lr, weight_decay),
                                     lr=lr, betas=(0.9, 0.99), weight_decay=weight_decay)
         else:
             optimizer = optim.AdamW(ctgn.parameters(), lr=lr, betas=(0.9, 0.99), weight_decay=weight_decay)
         scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones, gamma=0.1)
-        trainer = Trainer(ctgn, name='%s_%d' % (name, fold), classification=classification)
+        trainer = Trainer(ctgn, name='%s_%d_%s' % (name, fold, args.remarks), classification=classification)
 
         # train
         train_loader = DataLoader(cd, batch_size=batch_size, shuffle=True, collate_fn=cd.collate_line_graph)
@@ -142,11 +167,11 @@ hyperparam = vars(args)
 # hyperparam['grad_accum'] = grad_accum
 # hyperparam['epochs'] = epochs
 metadata = {
-    "algorithm_version": "v5.3.7",
-    "hyperparameters": hyperparam,
-    "embeddings": embeddings_path
+    "algorithm_version": "v6.0.1",
+    "hyperparameters": hyperparam
 }
 
 mb.add_metadata(metadata)
 
-mb.to_file("CrysToGraph_benchmark%s.json.gz" % args.task)
+if args.fold == -1:
+    mb.to_file("CrysToGraph_benchmark_%s.json.gz" % args.task)
